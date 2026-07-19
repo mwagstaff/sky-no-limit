@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 200" fill="none">
+  <title>Sky No Limit</title>
+  <g transform="translate(18 34)">
+    <path fill="#DCEEFF" fill-rule="evenodd" d="M64 14a50 50 0 1 0 0 100 50 50 0 0 0 0-100Zm0 6a44 44 0 1 1 0 88 44 44 0 0 1 0-88Z"/>
+    <path fill="#091323" d="M91 14h31v23H91z" transform="rotate(39 106.5 25.5)"/>
+    <path d="M31 98.5C45.9 78.4 65.7 55.6 105.6 24.8L88.5 52.8C69.1 66.1 52.6 82.7 40.2 101.8Z" fill="#64D8FF"/>
+    <path d="M48.3 105.7C60.7 80.4 77.1 55.3 112.2 19.8L93.3 50C77.2 65.9 64.3 85.2 55.9 108.9Z" fill="#2AA8FA"/>
+    <path d="M58.4 109.2C69.6 77.4 87.1 46.8 119 13.5L112.2 19.8C84.6 50.8 70.5 79.4 64.6 111.3Z" fill="#1979F2"/>
+    <path d="M119 13.5 113.1 36.4 106.3 25.6 88.5 22.9Z" fill="#1979F2"/>
+  </g>
+  <text x="172" y="105" fill="#F2F7FF" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="700" letter-spacing="15">SKY</text>
+  <text x="177" y="152" fill="#64C9FF" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="600" letter-spacing="12">NO LIMIT</text>
+</svg>
