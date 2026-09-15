@@ -18,9 +18,14 @@ app.disable('x-powered-by');
 // /healthcheck is the path the deploy tooling and Caddy expect; keep /healthz as an alias.
 app.get(['/healthcheck', '/healthz'], (req, res) => res.json({ status: 'ok' }));
 
-// App Store-referenced legal pages — these exact paths must keep working.
-app.get('/privacy_policy', (req, res) => res.sendFile(path.join(dist, 'privacy_policy.html')));
-app.get('/terms_of_use', (req, res) => res.sendFile(path.join(dist, 'terms_of_use.html')));
+// App Store-referenced legal pages — keep the canonical and .html variants fresh.
+const sendLegalPage = (fileName) => (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+  res.sendFile(path.join(dist, fileName), { cacheControl: false });
+};
+
+app.get(['/privacy_policy', '/privacy_policy.html'], sendLegalPage('privacy_policy.html'));
+app.get(['/terms_of_use', '/terms_of_use.html'], sendLegalPage('terms_of_use.html'));
 
 // Legacy routes from the old Firebase-hosted Ionic app.
 const redirects = {
