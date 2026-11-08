@@ -50,8 +50,10 @@ app.use(
   express.static(dist, {
     maxAge: '1h',
     setHeaders(res, filePath) {
-      // Vite emits content-hashed filenames under /assets — cache those hard.
-      if (/\/assets\/index-|\.woff2$/.test(filePath)) {
+      // Vite emits content-hashed bundles, chunks and imported images under /assets
+      // (name-<hash>.js|css|webp); cache those and fonts hard. Hand-placed files in
+      // public/assets keep the 1h default.
+      if (/\/assets\/[^/]+-[\w-]{8}\.(js|css|webp)$|\.woff2$/.test(filePath)) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       }
     },

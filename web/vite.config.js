@@ -5,6 +5,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsInlineLimit: 2048,
+    // the WebGL universe (three + gsap) is one deliberately lazy chunk, loaded after content
+    chunkSizeWarningLimit: 700,
     rollupOptions: {
       input: {
         main: resolve(import.meta.dirname, 'index.html'),

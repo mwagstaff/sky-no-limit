@@ -70,5 +70,15 @@ keep working at these exact paths:
 
 ## Design
 
-See `.impeccable.md` for the design context ("cinematic orbital studio"
-direction, palette, type choices) used for the 2026 redesign.
+The site is being rebuilt (Nov 2026) as an immersive WebGL journey: see
+`docs/REDESIGN_BRIEF.md` for the brief, `PRODUCT.md` for product truth and
+`.impeccable/surfaces/web-index-html.md` for the agreed direction and phasing.
+
+- Content stays in semantic HTML (`web/index.html`); the Three.js universe
+  (`web/src/scene/`) is lazy-loaded behind it and follows the native scroll
+  (`web/src/journey/progress.js`). Without WebGL a still sky is drawn instead.
+- Append `?quality=high|medium|low` to force a rendering tier when testing.
+- Earth is NASA imagery (sources and processing in
+  `web/src/assets/earth/README.md`); append `?earth=procedural` to see the
+  noise-generated fallback used under Save-Data or if the imagery fails to load.
+- Legal pages use their own stylesheet, `web/src/legal.css`.
