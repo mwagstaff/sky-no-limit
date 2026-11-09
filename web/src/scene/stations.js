@@ -151,16 +151,19 @@ export function createStationPoses({ system }) {
     },
 
     nebula(out, aspect, station) {
+      // face-on, from the distance its layers line up at: the Veil sweeps
+      // across the sky behind the panel, its brightest filaments drawn into
+      // the free space beside (or above) it
       subject.copy(NEBULA.centre);
-      approach.set(0.42, 0.12, 1).normalize();
-      // the nebula surrounds the panel rather than sitting beside it
-      const { sx, sy } = placement(station, aspect, 0.22);
+      approach.copy(NEBULA.facing);
+      const fov = fitFov(50, aspect);
+      const { sx, sy } = placement(station, aspect, 0.3);
       return frame(out, {
-        radius: NEBULA.size * 0.7,
-        fill: 1.05,
-        sx: sx * 0.5,
-        sy: sy * 0.5,
-        fov: fitFov(55, aspect),
+        radius: NEBULA.viewDistance * Math.tan(MathUtils.degToRad(fov / 2)),
+        fill: 1,
+        sx: isPortrait(aspect) ? 0.1 : sx - 0.24,
+        sy: isPortrait(aspect) ? sy * 0.6 : 0,
+        fov,
         aspect,
       });
     },

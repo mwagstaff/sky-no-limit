@@ -58,9 +58,11 @@ void main() {
   float twilight = exp(-pow((nl - 0.02) / 0.1, 2.0));
   colour += vec3(0.55, 0.22, 0.06) * twilight * (0.006 + 0.03 * clouds);
 
-  // cities on the night side, dimmed under cloud
+  // cities on the night side, dimmed under cloud, and a whisper of moonlight
+  // so the continents still read in the dark
   float night = 1.0 - smoothstep(-0.14, 0.06, nl);
   colour += uCityColor * lights * night * (1.0 - 0.8 * clouds);
+  colour += mix(albedo, vec3(0.5), clouds) * vec3(0.035, 0.05, 0.085) * night;
 
   // extinction: the longer the path through the air, the dimmer the ground
   float slant = min(1.0, uScaleRatio / max(nv, 1e-3));

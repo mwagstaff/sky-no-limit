@@ -1,6 +1,8 @@
 // Earth, where the journey departs from: a sunlit blue-and-green globe hung in
 // the dark, with drifting weather, city lights along the terminator and one
-// small satellite gliding round it. The surface is NASA imagery (Blue Marble
+// small satellite gliding round it. It faces the visitor's part of the world
+// in the real sun's light for their clock (solar.js), and turns once an hour.
+// The surface is NASA imagery (Blue Marble
 // by day, Black Marble by night) baked once into two maps, then lit every
 // frame. If the imagery can't be had (Save-Data, a failed download, or
 // ?earth=procedural), the same maps are baked from noise instead.
@@ -13,6 +15,7 @@ import {
   FrontSide,
   GLSL3,
   Group,
+  Matrix4,
   LinearFilter,
   LinearMipmapLinearFilter,
   Mesh,
@@ -44,14 +47,14 @@ import dayLargeUrl from '../../assets/earth/earth-day-3072.webp?url';
 import daySmallUrl from '../../assets/earth/earth-day-2048.webp?url';
 import cloudsUrl from '../../assets/earth/earth-clouds-2048.webp?url';
 import lightsUrl from '../../assets/earth/earth-lights-2048.webp?url';
-import { EARTH, UP } from '../layout.js';
+import { EARTH } from '../layout.js';
+import { sceneDate, subsolarPoint, visitorRegion } from '../solar.js';
 import { disposeTree } from '../textures.js';
 
 const TAU = Math.PI * 2;
 const SCALE_HEIGHT = EARTH.radius * 0.02;
-const SPIN = TAU / 5400; // one turn every 90 minutes: alive, never busy
+const SPIN = TAU / 3600; // one turn an hour: a day of light and dark, sped up 24 times
 const CLOUD_DRIFT = 1 / 9000; // the weather slides east over the ground
-const LONGITUDE = 4.45; // turns Europe and Africa (about 7°E, 24°N) to face the opening
 const SATELLITE_PERIOD = 96;
 const IMAGERY_PATIENCE = 4000; // ms to wait for the imagery before baking from noise
 
@@ -128,10 +131,42 @@ function loadImagery(tier) {
   ]);
 }
 
+/** A point on the globe (latitude, longitude in degrees) in the sphere's own frame, matching its uvs. */
+function surfacePoint(lat, lon, out = new Vector3()) {
+  const phi = ((lon + 180) / 360) * TAU;
+  const theta = ((90 - lat) / 180) * Math.PI;
+  return out.set(-Math.cos(phi) * Math.sin(theta), Math.cos(theta), Math.sin(phi) * Math.sin(theta));
+}
+
+/**
+ * Turn the globe so the place at (lat, lon) faces the opening eye with north
+ * pointing up the screen, and work out where the real sun is from there.
+ */
+function orient(date, group, sun) {
+  const region = visitorRegion(date);
+  // centre a little south of the visitor, so their region sits high on the disc
+  // with more of the world around it, rather than looking down on the pole
+  const facing = surfacePoint(Math.max(-30, Math.min(30, region.lat * 0.5)), region.lon);
+  const northward = new Vector3(0, 1, 0).projectOnPlane(facing).normalize();
+  const local = new Matrix4().makeBasis(facing, northward, new Vector3().crossVectors(facing, northward));
+  const world = new Matrix4().makeBasis(
+    EARTH.approach,
+    EARTH.north,
+    new Vector3().crossVectors(EARTH.approach, EARTH.north)
+  );
+  group.quaternion.setFromRotationMatrix(world.multiply(local.transpose()));
+
+  const { lat, lon } = subsolarPoint(date);
+  surfacePoint(lat, lon, sun).applyQuaternion(group.quaternion);
+}
+
 export function createEarth({ tier, renderer }) {
   const group = new Group();
   group.position.copy(EARTH.centre);
-  group.quaternion.setFromUnitVectors(UP, EARTH.axis);
+  // The sun stays put in the universe while Earth turns beneath it, so the
+  // day and night the visitor sees start true to their own clock.
+  const sun = new Vector3();
+  orient(sceneDate(), group, sun);
 
   const maps = createBake(renderer, tier.name === 'high' ? 3072 : 2048);
   const [surfaceMap, detailMap] = maps.textures;
@@ -167,7 +202,7 @@ export function createEarth({ tier, renderer }) {
       uniforms: {
         uSurface: { value: surfaceMap },
         uDetail: { value: detailMap },
-        uSunDirection: { value: EARTH.sun },
+        uSunDirection: { value: sun },
         uSunLocal: { value: sunLocal },
         uCloudShift: { value: 0 },
         uSunIntensity: { value: 1.3 },
@@ -186,7 +221,7 @@ export function createEarth({ tier, renderer }) {
         uCentre: { value: EARTH.centre },
         uRadius: { value: EARTH.radius },
         uScaleHeight: { value: SCALE_HEIGHT },
-        uSunDirection: { value: EARTH.sun },
+        uSunDirection: { value: sun },
         uRayleigh: { value: new Color('#3d8bff') },
         uSunset: { value: new Color('#ff7a2e') },
         uIntensity: { value: 1.25 },
@@ -241,10 +276,10 @@ export function createEarth({ tier, renderer }) {
       satellite.material.uniforms.uPixelRatio.value = ratio;
     },
     update(time) {
-      globe.rotation.y = LONGITUDE + time * SPIN;
+      globe.rotation.y = time * SPIN;
       globe.updateMatrixWorld();
       globe.getWorldQuaternion(inverse).invert();
-      sunLocal.copy(EARTH.sun).applyQuaternion(inverse);
+      sunLocal.copy(sun).applyQuaternion(inverse);
       globe.material.uniforms.uCloudShift.value = (time * CLOUD_DRIFT) % 1;
 
       // the orbit lives in the group's frame, which is already centred and tilted
@@ -255,8 +290,8 @@ export function createEarth({ tier, renderer }) {
 
       // in Earth's shadow when the globe sits between it and the sun
       world.copy(orbit).applyQuaternion(group.quaternion);
-      const along = world.dot(EARTH.sun);
-      const inShadow = along < 0 && world.addScaledVector(EARTH.sun, -along).length() < EARTH.radius;
+      const along = world.dot(sun);
+      const inShadow = along < 0 && world.addScaledVector(sun, -along).length() < EARTH.radius;
       if (inShadow) shade.copy(beacon).multiplyScalar(0.3 + 0.7 * Math.max(0, Math.sin(time * 4.2)) ** 6);
       else shade.copy(sunlit);
       satelliteColour.setXYZ(0, shade.r, shade.g, shade.b);

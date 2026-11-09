@@ -40,10 +40,13 @@ for (const [from, to] of Object.entries(redirects)) {
   app.get(from, (req, res) => res.redirect(301, to));
 }
 
-const caseSlugs = new Set(['traintrack-uk', 'top-scores', 'my-boris-bikes', 'bromley-bins']);
+const caseSlugs = new Set(['traintrack-uk', 'tubetrack-uk', 'bikespot-london', 'top-scores', 'kidsplorers', 'bromley-bins']);
+// apps that have since been renamed
+const renamedSlugs = { 'my-boris-bikes': 'bikespot-london' };
 app.get('/portfolio/:slug', (req, res) => {
   const slug = req.params.slug.toLowerCase();
-  res.redirect(301, caseSlugs.has(slug) ? `/#${slug}` : '/#work');
+  const current = renamedSlugs[slug] ?? slug;
+  res.redirect(301, caseSlugs.has(current) ? `/#${current}` : '/#work');
 });
 
 app.use(

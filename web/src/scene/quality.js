@@ -3,9 +3,9 @@
 // ratio further if a device can't hold its frame rate.
 
 export const TIERS = {
-  high: { name: 'high', dpr: 2, minDpr: 1, stars: 16000, nearStars: 5000, galaxy: 90000, nebulaClouds: 48, dust: 240 },
-  medium: { name: 'medium', dpr: 1.5, minDpr: 0.85, stars: 10000, nearStars: 3000, galaxy: 50000, nebulaClouds: 36, dust: 150 },
-  low: { name: 'low', dpr: 1, minDpr: 0.7, stars: 5500, nearStars: 1500, galaxy: 22000, nebulaClouds: 24, dust: 70 },
+  high: { name: 'high', dpr: 2, minDpr: 1, stars: 16000, nearStars: 5000, galaxy: 90000, dust: 240 },
+  medium: { name: 'medium', dpr: 1.5, minDpr: 0.85, stars: 10000, nearStars: 3000, galaxy: 50000, dust: 150 },
+  low: { name: 'low', dpr: 1, minDpr: 0.7, stars: 5500, nearStars: 1500, galaxy: 22000, dust: 70 },
 };
 
 const WEAK_GPU =

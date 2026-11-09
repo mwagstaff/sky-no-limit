@@ -1,16 +1,17 @@
 // The camera rig: follows the journey value with critically damped easing,
 // holds still while a station's panel is centred (the dwell), and flies a
 // centripetal Catmull-Rom path between stations. Pointer parallax and a
-// slow drift are layered on top in camera space.
+// slow drift are layered on top in camera space, and the visitor's own swing
+// round Earth (`orbit`, from globe-control.js) on top of everything.
 
-import { CatmullRomCurve3, MathUtils, Vector3 } from 'three';
+import { CatmullRomCurve3, MathUtils, Quaternion, Vector3 } from 'three';
 import { UP } from './layout.js';
 
 const DWELL = 0.16;
 const FOLLOW = 3.2; // higher = camera keeps closer to the scroll position
 const smootherstep = (x) => x * x * x * (x * (x * 6 - 15) + 10);
 
-export function createRig({ camera, stations, poseFor }) {
+export function createRig({ camera, stations, poseFor, orbit = null }) {
   const count = stations.length;
   const positions = stations.map(() => new Vector3());
   const targets = stations.map(() => new Vector3());
@@ -23,6 +24,7 @@ export function createRig({ camera, stations, poseFor }) {
   const forward = new Vector3();
   const right = new Vector3();
   const up = new Vector3();
+  const swing = new Quaternion();
 
   const pointer = { x: 0, y: 0, smoothX: 0, smoothY: 0 };
   const intro = { amount: 0 };
@@ -87,6 +89,15 @@ export function createRig({ camera, stations, poseFor }) {
         camera.position
           .addScaledVector(right, pointer.smoothX * distance * 0.012)
           .addScaledVector(up, pointer.smoothY * distance * 0.008 + Math.sin(time * 0.21) * distance * 0.0015);
+      }
+
+      if (orbit && orbit.weight > 0) {
+        swing.identity().slerp(orbit.quaternion, orbit.weight);
+        camera.position.sub(orbit.centre).applyQuaternion(swing).add(orbit.centre);
+        target.sub(orbit.centre).applyQuaternion(swing).add(orbit.centre);
+        camera.up.copy(UP).applyQuaternion(swing);
+      } else {
+        camera.up.copy(UP);
       }
 
       camera.lookAt(target);

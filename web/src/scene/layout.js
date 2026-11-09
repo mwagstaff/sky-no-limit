@@ -1,8 +1,8 @@
 // Where everything sits in the one universe. Positions are derived from the
 // opening viewpoint so the first frame's composition is designed, not found:
-// the camera hangs off the sunlit side of Earth, which sits low and to the
-// right like a jewel, while the gold star the journey heads for burns in open
-// sky above it, with the four app worlds orbiting that star beyond.
+// the camera hangs off Earth, which sits low and to the right like a jewel,
+// while the gold star the journey heads for burns in open sky above it, with
+// the app worlds orbiting that star beyond.
 
 import { MathUtils, Vector3 } from 'three';
 
@@ -22,26 +22,19 @@ export const OPENING_EYE = new Vector3(0, 0, 0);
 const earthCentre = direction(11.5, -40.75).multiplyScalar(1716);
 const earthApproach = OPENING_EYE.clone().sub(earthCentre).normalize();
 const earthRight = new Vector3().crossVectors(earthApproach, UP).multiplyScalar(-1).normalize();
-const earthUp = new Vector3().crossVectors(earthRight, earthApproach.clone().negate());
 
 export const EARTH = {
   centre: earthCentre,
   radius: 400,
   /** Unit vector from Earth towards the opening eye. */
   approach: earthApproach,
-  // Lit from over the viewer's right shoulder: a gibbous disc, day side
-  // facing the eye, with the terminator and city lights low on the left.
-  sun: earthApproach
-    .clone()
-    .multiplyScalar(0.45)
-    .addScaledVector(earthRight, 0.7)
-    .addScaledVector(earthUp, 0.55)
-    .normalize(),
-  // north up but tipped a little away from the viewer (we look down on Earth
-  // from above), so the face we see centres near 25°N rather than near the pole
-  axis: UP.clone()
-    .addScaledVector(earthApproach.clone().setY(0).normalize(), -0.29)
+  // Which way north points across the disc in the opening: up, with a touch of
+  // roll. The face shown and the sunlight are set at run time from the clock
+  // and the visitor's region (see solar.js and env/earth.js).
+  north: UP.clone()
+    .projectOnPlane(earthApproach)
     .addScaledVector(earthRight, -0.12)
+    .projectOnPlane(earthApproach)
     .normalize(),
 };
 
@@ -72,24 +65,38 @@ export const ORBIT_ACROSS = new Vector3().crossVectors(ORBIT_NORMAL, ORBIT_AWAY)
 export const TOWARD_EYE = towardEye;
 
 /**
- * The four app worlds. `phase` is the orbital angle in radians (0..π is the
- * far side of the star from the opening eye, so all four sit clear of Earth
- * in the first frame). `period` is in seconds — orbits drift, they don't race.
+ * The app worlds, in journey order. `phase` is the orbital angle in radians
+ * (0..π is the far side of the star from the opening eye, so all of them sit
+ * clear of Earth in the first frame). `period` is in seconds — orbits drift,
+ * they don't race. `side` matches the panel: 1 when it sits left, -1 right.
  */
 export const WORLDS = [
-  { slug: 'traintrack-uk', orbit: 215, radius: 16, phase: 1.05, period: 1400, tint: '#5f8fd0', side: 1 },
-  { slug: 'top-scores', orbit: 325, radius: 24, phase: 2.0, period: 2300, tint: '#7d6fd6', side: -1 },
-  { slug: 'my-boris-bikes', orbit: 440, radius: 14, phase: 0.55, period: 3300, tint: '#b8604c', side: 1 },
-  { slug: 'bromley-bins', orbit: 545, radius: 7, phase: 2.55, period: 4400, tint: '#93a0b4', side: -1 },
+  { slug: 'traintrack-uk', orbit: 200, radius: 16, phase: 1.05, period: 1400, tint: '#5f8fd0', side: 1 },
+  { slug: 'tubetrack-uk', orbit: 265, radius: 11, phase: 2.35, period: 1900, tint: '#c9d6e6', side: -1 },
+  { slug: 'bikespot-london', orbit: 330, radius: 14, phase: 0.55, period: 2500, tint: '#b8604c', side: 1 },
+  { slug: 'top-scores', orbit: 400, radius: 24, phase: 1.75, period: 3000, tint: '#7d6fd6', side: -1 },
+  { slug: 'kidsplorers', orbit: 480, radius: 12, phase: 0.95, period: 3700, tint: '#d9a441', side: 1 },
+  { slug: 'bromley-bins', orbit: 560, radius: 7, phase: 2.55, period: 4400, tint: '#93a0b4', side: -1 },
 ];
 
 export const SYSTEM_RADIUS = 600;
 
 /* ---------- deeper space ---------- */
 
+/**
+ * The Veil: Hubble's image of a supernova remnant's filaments, laid out as a
+ * few layers of light across `width` (the image's 3:2 frame), facing the way
+ * the journey arrives so the Capabilities station sees it whole.
+ */
 export const NEBULA = {
   centre: STAR.position.clone().add(new Vector3(-2200, 1100, -3600)),
-  size: 1700,
+  width: 4600,
+  aspect: 2048 / 1365,
+  facing: new Vector3(0.42, 0.12, 1).normalize(),
+  /** Roll of the image about `facing` (radians): sets which way the filaments sweep across the sky. */
+  roll: 0.6,
+  /** How far off the Capabilities station hangs, along `facing`; the layers line up from there. */
+  viewDistance: 4800,
 };
 
 export const SINGULARITY = {

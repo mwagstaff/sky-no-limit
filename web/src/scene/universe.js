@@ -7,6 +7,8 @@ import { FAR } from './layout.js';
 import { detectTier } from './quality.js';
 import { createRig } from './rig.js';
 import { createStationPoses } from './stations.js';
+import { createGlobeControl } from './globe-control.js';
+import { createGlass } from './glass.js';
 import { createStarfield } from './env/starfield.js';
 import { createEarth } from './env/earth.js';
 import { createSystem } from './env/system.js';
@@ -40,23 +42,64 @@ export function createUniverse({ canvas, journey, reducedMotion, onReady, onLost
   const skyEvents = createSkyEvents({
     isClear(x, y) {
       const element = document.elementFromPoint(((x + 1) / 2) * window.innerWidth, ((1 - y) / 2) * window.innerHeight);
-      return !element?.closest('.panel, .opening-copy, .contact-copy, .site-header, .trajectory, .site-footer, .cookie-notice');
+      return !element?.closest('.panel, .opening-copy, .contact-copy, .site-header, .trajectory, .site-footer, .cookie-notice, .view-reset');
     },
   });
   const earth = createEarth({ tier, renderer });
-  const system = createSystem({ tier });
-  const nebula = createNebula({ tier });
+  const system = createSystem({ tier, renderer });
+  const nebula = createNebula({ renderer });
   const singularity = createSingularity({ tier });
   const galaxy = createGalaxy({ tier });
   const dust = createDust({ tier });
   const environments = [starfield, skyEvents, earth, system, nebula, singularity, galaxy, dust];
   for (const env of environments) scene.add(env.object);
 
+  /* ---------- Earth in the visitor's hand ---------- */
+
+  const globeControl = createGlobeControl({
+    camera,
+    journeyValue: () => rig.value ?? journey.progress,
+    reducedMotion,
+    // with reduced motion there's no loop, so draw each step of the drag
+    onChange: () => running || lost || renderFrame(0),
+  });
+
   const rig = createRig({
     camera,
     stations: journey.stations,
     poseFor: createStationPoses({ system }),
+    orbit: globeControl.orbit,
   });
+
+  /* ---------- the cards' glass ---------- */
+
+  // While the loop runs, the frosted glass behind each card is drawn here, in
+  // the same frame as the scene (see glass.js); the class turns the CSS
+  // backdrop blur off once it is. Without the loop (reduced motion, a hidden
+  // tab) the canvas holds still and the CSS glass is fine.
+  const root = document.documentElement;
+  const glass = createGlass({ renderer });
+  const cards = [];
+  let glassOn = false;
+  const setGlass = (on) => {
+    if (on === glassOn) return;
+    glassOn = on;
+    root.classList.toggle('glass-webgl', on);
+  };
+
+  function drawGlass() {
+    const top = window.scrollY;
+    const height = window.innerHeight;
+    let radius = 0;
+    cards.length = 0;
+    for (const { panel } of journey.stations) {
+      if (!panel || panel.top - top > height || panel.top + panel.height - top < 0) continue;
+      cards.push({ left: panel.left, top: panel.top - top, width: panel.width, height: panel.height });
+      radius = panel.radius;
+    }
+    if (glass.render(cards, radius)) setGlass(true);
+    else if (!glass.supported) setGlass(false);
+  }
 
   /* ---------- sizing ---------- */
 
@@ -70,12 +113,17 @@ export function createUniverse({ canvas, journey, reducedMotion, onReady, onLost
       env.setPixelRatio?.(pixelRatio);
       env.setSize?.(width, height);
     }
+    glass.setSize(canvas.width, canvas.height, renderer.getPixelRatio());
   };
   resize();
-  new ResizeObserver(() => {
+  // A resized canvas is blank until it's drawn again, and the browser would
+  // show that blank frame (a black flash, starkest behind a glass panel over
+  // the nebula). So every resize after start-up redraws on the spot.
+  const resizeAndRedraw = () => {
     resize();
-    if (!running) renderFrame(0);
-  }).observe(canvas);
+    if (!lost) renderFrame(0);
+  };
+  new ResizeObserver(resizeAndRedraw).observe(canvas);
 
   /* ---------- pointer parallax (fine pointers only) ---------- */
 
@@ -83,12 +131,23 @@ export function createUniverse({ canvas, journey, reducedMotion, onReady, onLost
   window.addEventListener(
     'pointermove',
     (event) => {
-      if (!finePointer.matches || reducedMotion.matches) return;
+      // hold the view steady while the visitor has hold of the globe
+      if (!finePointer.matches || reducedMotion.matches || globeControl.dragging) return;
       rig.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
       rig.pointer.y = -((event.clientY / window.innerHeight) * 2 - 1);
     },
     { passive: true }
   );
+
+  // the "Reset view" button: offered only while the visitor has things turned
+  const resetButton = document.querySelector('.view-reset');
+  let resetShown = false;
+  const showReset = (shown) => {
+    if (shown === resetShown || !resetButton) return;
+    resetShown = shown;
+    resetButton.classList.toggle('is-shown', shown);
+  };
+  resetButton?.addEventListener('click', () => globeControl.reset());
 
   /* ---------- render loop ---------- */
 
@@ -121,9 +180,12 @@ export function createUniverse({ canvas, journey, reducedMotion, onReady, onLost
     const still = reducedMotion.matches;
     if (!still) time += dt;
     for (const env of environments) env.update(time, camera);
+    globeControl.update(still ? 0 : dt);
+    showReset(globeControl.turned);
     rig.update(dt, journey.progress, { aspect: camera.aspect, time, snap: still });
     updatePresence(still ? Math.round(journey.progress) : rig.value);
     renderer.render(scene, camera);
+    if (running) drawGlass();
   }
 
   // If a device can't hold ~45fps, give back pixels before anything else.
@@ -145,7 +207,7 @@ export function createUniverse({ canvas, journey, reducedMotion, onReady, onLost
     monitor = { elapsed: 0, frames: 0, warmup: 0 };
     if (average > SLOW_FRAME && pixelRatio > tier.minDpr) {
       pixelRatio = Math.max(tier.minDpr, pixelRatio - 0.25);
-      resize();
+      resizeAndRedraw();
     }
   }
 
@@ -168,6 +230,7 @@ export function createUniverse({ canvas, journey, reducedMotion, onReady, onLost
   function stop() {
     running = false;
     cancelAnimationFrame(raf);
+    setGlass(false);
   }
 
   // Reduced motion: no loop at all. Draw a still frame of the nearest station
@@ -229,6 +292,16 @@ export function createUniverse({ canvas, journey, reducedMotion, onReady, onLost
       gsap.to(renderer, { toneMappingExposure: 1, duration: 3.2, ease: 'power2.out', delay: 0.15 });
     }
     requestAnimationFrame(() => onReady?.());
+    // then, in the browser's spare time, the nebula and the worlds' maps
+    // (the worlds keep their plain tints for visitors saving data)
+    const idle = window.requestIdleCallback ?? ((task) => setTimeout(task, 300));
+    idle(
+      () => {
+        nebula.load().catch(() => {});
+        if (navigator.connection?.saveData !== true) system.loadSurfaces();
+      },
+      { timeout: 2500 }
+    );
   });
 
   const api = {
@@ -239,6 +312,7 @@ export function createUniverse({ canvas, journey, reducedMotion, onReady, onLost
     dispose() {
       stop();
       for (const env of environments) env.dispose();
+      glass.dispose();
       renderer.dispose();
     },
   };
@@ -250,8 +324,24 @@ export function createUniverse({ canvas, journey, reducedMotion, onReady, onLost
       rig.update(0, journey.progress, { aspect: camera.aspect, time, snap: true });
       updatePresence(Math.round(journey.progress));
       renderer.render(scene, camera);
+      if (running) drawGlass();
     };
-    window.__universe = { ...api, renderer, scene, camera, rig, journey, settle, skyEvents, earth };
+    window.__universe = {
+      ...api,
+      renderer,
+      scene,
+      camera,
+      rig,
+      journey,
+      settle,
+      renderFrame,
+      drawGlass,
+      skyEvents,
+      earth,
+      nebula,
+      system,
+      globeControl,
+    };
   }
 
   return api;

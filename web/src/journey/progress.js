@@ -56,6 +56,17 @@ export function createJourney(elements) {
       const panel = station.el.querySelector('.panel');
       const box = panel?.getBoundingClientRect();
       station.focus = box ? focusFor(box, vw, vh, portrait) : null;
+      // the panel's box on the page (scrolling moves it, nothing else does),
+      // for the universe's glass behind it
+      station.panel = box
+        ? {
+            left: box.left,
+            top: box.top + window.scrollY,
+            width: box.width,
+            height: box.height,
+            radius: parseFloat(getComputedStyle(panel).borderTopLeftRadius) || 0,
+          }
+        : null;
       const anchor =
         box && portrait
           ? box.top + window.scrollY + (0.5 - PANEL_ARRIVAL) * vh

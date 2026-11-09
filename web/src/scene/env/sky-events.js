@@ -149,6 +149,8 @@ export function createSkyEvents({ isClear = () => true } = {}) {
   function clearAt(direction, camera) {
     if (direction.angleTo(toEarth) < earthAngle || direction.angleTo(toStar) < deg(10)) return false;
     probe.copy(camera.position).addScaledVector(direction, DISTANCE).project(camera);
+    // a direction square to the view projects nowhere: not somewhere to start
+    if (!Number.isFinite(probe.x) || !Number.isFinite(probe.y)) return false;
     return Math.abs(probe.x) > 1 || Math.abs(probe.y) > 1 || isClear(probe.x, probe.y);
   }
 

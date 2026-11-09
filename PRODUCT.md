@@ -23,8 +23,9 @@ the studio does, has seen the real shipped work, and starts a conversation.
 
 ## Positioning
 
-The portfolio is the studio's own products: four apps live on the App Store
-that Sky No Limit designed, engineered and still operates end to end,
+The portfolio is the studio's own products: five apps live on the App Store
+and one web app (Kidsplorers) that Sky No Limit designed, engineered and
+still operates end to end,
 including the servers and APIs behind them. "We fly what we build." A studio
 that only shows client showpieces cannot truthfully make that claim.
 
@@ -42,8 +43,9 @@ that only shows client showpieces cannot truthfully make that claim.
   on the `sky` server via server-tooling; `/healthcheck` and `/healthz`.
 - `/privacy_policy` and `/terms_of_use` must keep working at those exact
   paths. Legacy routes 301-redirect to homepage anchors (`#work`,
-  `#traintrack-uk`, `#top-scores`, `#my-boris-bikes`, `#bromley-bins`,
-  `#about`, `#contact`) — those anchors must keep existing.
+  `#traintrack-uk`, `#top-scores`, `#bikespot-london`, `#bromley-bins`,
+  `#about`, `#contact`) — those anchors must keep existing. Renamed apps keep
+  their old anchors as aliases (`#my-boris-bikes` lands on Bikespot London).
 - No analytics, advertising or tracking cookies; the cookie notice says so.
 - Self-hosted fonts and assets; no third-party requests at runtime.
 - Contact address is currently mike.wagstaff@gmail.com (a dedicated studio
@@ -65,10 +67,14 @@ that only shows client showpieces cannot truthfully make that claim.
 
 ## Evidence on Hand
 
-- Four App Store apps, each with real copy, platforms and store links in
-  `web/index.html`: TrainTrack UK (iPhone, iPad, Apple Watch), Top Scores
-  (iPhone, iPad), My Boris Bikes (iPhone, iPad, Apple Watch), Bromley Bins.
-- Screenshots: `web/public/assets/portfolio/<slug>/screenshot_*.png`.
+- Five App Store apps, each with real copy, platforms and store links in
+  `web/index.html`: TrainTrack UK, TubeTrack UK and Bikespot London (formerly
+  My Boris Bikes) (iPhone, iPad, Apple Watch), Top Scores (iPhone, iPad),
+  Bromley Bins (iPhone). One web app: Kidsplorers (kidsplorers.com), ideas for
+  family days out, UK-focused, starting with London.
+- Screenshots: `web/public/assets/portfolio/<slug>/`. TrainTrack, TubeTrack and
+  Bikespot use their November 2026 App Store screenshots (WebP); Kidsplorers'
+  are captures of the live site at phone size.
 - Absent and never to be fabricated: client logos, testimonials, download or
   user counts, ratings, revenue, team size, awards.
 

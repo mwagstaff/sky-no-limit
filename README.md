@@ -81,4 +81,16 @@ The site is being rebuilt (Nov 2026) as an immersive WebGL journey: see
 - Earth is NASA imagery (sources and processing in
   `web/src/assets/earth/README.md`); append `?earth=procedural` to see the
   noise-generated fallback used under Save-Data or if the imagery fails to load.
+- The Capabilities nebula (Hubble's Veil) and the six product worlds (Europa,
+  Enceladus, Mars, Jupiter, Io, the Moon) are NASA imagery too, loaded once the opening is on
+  screen; sources and processing in `web/src/assets/space/README.md`.
+- While the universe animates, the panels' frosted glass is drawn by the
+  renderer in the same frame as the scene (`web/src/scene/glass.js`); Chrome's
+  live `backdrop-filter` over a canvas redrawn every frame flickers. The CSS
+  blur still covers reduced motion and browsers without WebGL.
+- The address follows the journey (`/#bromley-bins` etc.), so any station can
+  be shared or bookmarked; links land where the camera rests
+  (`web/src/journey/address.js`).
+- Earth starts lit by the real sun for the visitor's clock; append
+  `?time=2026-11-08T12:00:00Z` (any ISO date) to preview another moment.
 - Legal pages use their own stylesheet, `web/src/legal.css`.

@@ -402,7 +402,11 @@ ul {
   font-weight: 540;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  text-shadow: 0 0 10px rgb(3 4 11 / 0.95), 0 0 2px rgb(3 4 11 / 0.9);
+  /* a pool of dark round each label, so it reads over the nebula's filaments */
+  text-shadow:
+    0 0 2px rgb(3 4 11 / 0.95),
+    0 0 8px rgb(3 4 11 / 0.95),
+    0 0 18px rgb(3 4 11 / 0.85);
   opacity: 0.75;
   transition: color 0.3s ease, opacity 0.3s ease, translate 0.4s var(--ease-out);
 }
@@ -441,6 +445,12 @@ main {
   z-index: 1;
 }
 
+/* stations take focus when a link jumps to them (journey/address.js); the
+   arrival is the camera's, so no ring round a screen-tall section */
+[data-station]:focus {
+  outline: none;
+}
+
 .station {
   position: relative;
   display: grid;
@@ -467,6 +477,14 @@ main {
   -webkit-backdrop-filter: blur(16px) saturate(1.25);
   backdrop-filter: blur(16px) saturate(1.25);
   box-shadow: 0 40px 90px -50px rgb(0 0 0 / 0.95);
+}
+
+/* While the universe is animating, the cards' frost is drawn by the renderer
+   in the same frame as the scene behind them (scene/glass.js): Chrome's live
+   backdrop blur of a canvas redrawn every frame flickers. */
+.glass-webgl .panel {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 .panel > * + * {
@@ -499,6 +517,19 @@ main {
   min-height: 100vh;
   min-height: 100svh;
   padding-top: clamp(6.5rem, 4rem + 13vh, 13rem);
+  /* sideways swipes spin the globe (globe-control.js); vertical ones still scroll */
+  touch-action: pan-y pinch-zoom;
+}
+
+/* Earth can be taken hold of in the opening */
+.globe-grab {
+  cursor: grab;
+}
+
+.globe-grabbing,
+.globe-grabbing * {
+  cursor: grabbing;
+  user-select: none;
 }
 
 .opening-copy {
@@ -594,7 +625,7 @@ main {
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.85rem 0.15rem;
+  padding: 0.7rem 0.15rem;
   border-bottom: 1px solid var(--hairline);
   text-decoration: none;
   transition: background-color 0.3s ease;
@@ -653,6 +684,11 @@ main {
 
 .world-shots-single {
   grid-template-columns: minmax(0, 9.5rem);
+}
+
+/* full-height phone screens: narrower, so the card stays about as tall */
+.world-shots-tall {
+  grid-template-columns: repeat(2, minmax(0, 6.25rem));
 }
 
 .world-shots img {
@@ -746,6 +782,49 @@ main {
   justify-content: center;
 }
 
+/* ---------- reset view ---------- */
+
+/* Appears once the visitor has turned the globe; puts the universe back. */
+.view-reset {
+  position: fixed;
+  right: max(var(--gutter), env(safe-area-inset-right));
+  bottom: max(var(--gutter), env(safe-area-inset-bottom));
+  z-index: 35;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.95rem 0.5rem 0.8rem;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background: rgb(3 4 11 / 0.5);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  translate: 0 0.4rem;
+  transition:
+    opacity 0.4s ease,
+    translate 0.5s var(--ease-out),
+    visibility 0s linear 0.4s,
+    color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.view-reset.is-shown {
+  opacity: 1;
+  visibility: visible;
+  translate: 0 0;
+  transition-delay: 0s;
+}
+
+.view-reset:hover {
+  border-color: var(--hairline-strong);
+  color: var(--ink-1);
+}
+
 /* ---------- footer ---------- */
 
 .site-footer {
@@ -778,8 +857,23 @@ main {
 }
 
 .footer-nav a:hover,
-.footer-note a:hover {
+.footer-note a:hover,
+.footer-credit a:hover {
   color: var(--ink-1);
+}
+
+/* the imagery's credits: a quiet line of their own beneath the rest */
+.footer-credit {
+  flex-basis: 100%;
+  max-width: 72ch;
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.footer-credit a {
+  color: var(--ink-2);
+  text-decoration: none;
+  transition: color 0.25s ease;
 }
 
 /* ---------- cookie note ---------- */
@@ -870,7 +964,8 @@ main {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cookie-notice {
+  .cookie-notice,
+  .view-reset {
     transition: none;
   }
 }
@@ -1021,6 +1116,10 @@ main {
 
   .world-shots-single {
     grid-template-columns: minmax(0, 7.25rem);
+  }
+
+  .world-shots-tall {
+    grid-template-columns: repeat(2, minmax(0, 5.5rem));
   }
 
   .system-index-meta {
